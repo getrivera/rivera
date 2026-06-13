@@ -78,10 +78,6 @@ export async function uploadSaleDocument(formData: FormData): Promise<ActionResu
     return { success: false, error: 'Failed to upload file. Please try again.' }
   }
 
-  const { data: urlData } = supabase.storage
-    .from('sale-documents')
-    .getPublicUrl(storagePath)
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: insertError } = await (adminClient as any)
     .from('sale_documents')
@@ -91,7 +87,7 @@ export async function uploadSaleDocument(formData: FormData): Promise<ActionResu
       document_type: documentType,
       custom_label: customLabel,
       file_name: file.name,
-      storage_url: urlData.publicUrl,
+      storage_url: storagePath, // store path, not public URL
       storage_path: storagePath,
       size_bytes: file.size,
       uploaded_by: user.id,
@@ -99,7 +95,6 @@ export async function uploadSaleDocument(formData: FormData): Promise<ActionResu
 
   if (insertError) {
     console.error('DOCUMENT INSERT FAILED:', insertError.message)
-    // Clean up uploaded file
     await supabase.storage.from('sale-documents').remove([storagePath])
     return { success: false, error: 'Failed to save document record.' }
   }
@@ -141,7 +136,6 @@ export async function deleteSaleDocument(
     return { success: false, error: 'You do not have permission to delete documents' }
   }
 
-  // Get document to find storage path
   const { data: docRaw } = await supabase
     .from('sale_documents')
     .select('id, storage_path, file_name')
@@ -152,10 +146,8 @@ export async function deleteSaleDocument(
   const doc = docRaw as { id: string; storage_path: string; file_name: string } | null
   if (!doc) return { success: false, error: 'Document not found' }
 
-  // Delete from storage
   await supabase.storage.from('sale-documents').remove([doc.storage_path])
 
-  // Delete record
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (adminClient as any)
     .from('sale_documents')
@@ -179,4 +171,38 @@ export async function deleteSaleDocument(
 
   revalidatePath(`/sales/${buyerId}`)
   return { success: true, data: undefined }
+}
+
+export async function getDocumentSignedUrl(documentId: string): Promise<ActionResult> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const { data: staffData } = await supabase
+    .from('company_staff')
+    .select('company_id, role')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!staffData) return { success: false, error: 'Not authorised' }
+  const staff = staffData as StaffRecord
+
+  const { data: docRaw } = await supabase
+    .from('sale_documents')
+    .select('storage_path')
+    .eq('id', documentId)
+    .eq('company_id', staff.company_id)
+    .single()
+
+  const doc = docRaw as { storage_path: string } | null
+  if (!doc) return { success: false, error: 'Document not found' }
+
+  const { data, error } = await supabase.storage
+    .from('sale-documents')
+    .createSignedUrl(doc.storage_path, 60 * 60) // 1 hour
+
+  if (error || !data) return { success: false, error: 'Failed to generate download link' }
+
+  return { success: true, data: { url: data.signedUrl } }
 }

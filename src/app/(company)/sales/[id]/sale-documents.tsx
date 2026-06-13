@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { uploadSaleDocument, deleteSaleDocument } from '@/actions/sale-documents'
+import { uploadSaleDocument, deleteSaleDocument, getDocumentSignedUrl } from '@/actions/sale-documents'
 import { DOCUMENT_TYPES } from '@/lib/document-types'
 import { FileText, Upload, Trash2, Loader2, ExternalLink } from 'lucide-react'
 
@@ -31,6 +31,7 @@ export function SaleDocuments({ saleId, documents, canManage }: Props) {
   const [customLabel, setCustomLabel] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [viewingId, setViewingId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -92,6 +93,19 @@ export function SaleDocuments({ saleId, documents, canManage }: Props) {
     })
   }
 
+  function handleView(documentId: string) {
+    setViewingId(documentId)
+    startTransition(async () => {
+      const result = await getDocumentSignedUrl(documentId)
+      if (!result.success) {
+        setError('error' in result ? result.error : 'Failed to open document')
+      } else if (result.data) {
+        window.open((result.data as { url: string }).url, '_blank')
+      }
+      setViewingId(null)
+    })
+  }
+
   return (
     <div className="space-y-4">
       {/* Document list */}
@@ -118,15 +132,18 @@ export function SaleDocuments({ saleId, documents, canManage }: Props) {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                <a
-                  href={doc.storage_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 text-gray-400 hover:text-brand-500 transition-colors"
+                <button
+                  onClick={() => handleView(doc.id)}
+                  disabled={viewingId === doc.id}
+                  className="p-1.5 text-gray-400 hover:text-brand-500 transition-colors disabled:opacity-50"
                   title="View document"
                 >
-                  <ExternalLink size={14} />
-                </a>
+                  {viewingId === doc.id ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <ExternalLink size={14} />
+                  )}
+                </button>
                 {canManage && (
                   <button
                     onClick={() => handleDelete(doc.id)}
