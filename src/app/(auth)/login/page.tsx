@@ -28,8 +28,6 @@ function LoginForm() {
     const supabase = createClient()
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-    console.log('Login result:', { data, error })
-
     if (error) {
       setError('Invalid email or password')
       setLoading(false)
@@ -38,9 +36,39 @@ function LoginForm() {
 
     // Wait for session to be fully committed to cookies
     await supabase.auth.getSession()
-
-    // Small delay to ensure cookie is set before server component reads it
     await new Promise(resolve => setTimeout(resolve, 300))
+
+    // Check company status before redirecting
+    const { data: staffData } = await supabase
+      .from('company_staff')
+      .select('company_id')
+      .eq('user_id', data.user.id)
+      .single()
+
+    const staff = staffData as { company_id: string } | null
+
+    if (staff?.company_id) {
+      const { data: companyData } = await supabase
+        .from('companies')
+        .select('status')
+        .eq('id', staff.company_id)
+        .single()
+
+      const company = companyData as { status: string } | null
+
+      if (company?.status === 'pending') {
+        window.location.href = '/pending'
+        return
+      }
+
+      if (company?.status === 'suspended') {
+        await supabase.auth.signOut()
+        setError('Your account has been suspended. Please contact support.')
+        setLoading(false)
+        return
+      }
+    }
+
     window.location.href = '/dashboard'
   }
 
