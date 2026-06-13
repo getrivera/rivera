@@ -130,11 +130,18 @@ export async function signupCompany(formData: FormData): Promise<ActionResult> {
     ? `${slug}-${Math.random().toString(36).substring(2, 6)}`
     : slug
 
-  const result = await createCompanyAndStaff(
-    adminClient, userId, companyName, fullName, email, finalSlug, companyCode
-  )
+    const result = await createCompanyAndStaff(
+      adminClient, userId, companyName, fullName, email, finalSlug, companyCode
+    )
+  
+    // If company setup failed, delete the auth user so they can try again cleanly
+    if (!result.success) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (adminClient as any).auth.admin.deleteUser(userId)
+    }
+  
+    return result
 
-  return result
 }
 
 async function createCompanyAndStaff(
