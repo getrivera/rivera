@@ -46,6 +46,7 @@ function LoginForm() {
       .single()
 
     const staff = staffData as { company_id: string } | null
+    console.log('Staff data:', staff)
 
     if (staff?.company_id) {
       const { data: companyData } = await supabase
@@ -55,6 +56,7 @@ function LoginForm() {
         .single()
 
       const company = companyData as { status: string } | null
+      console.log('Company data:', company)
 
       if (company?.status === 'pending') {
         window.location.href = '/pending'
