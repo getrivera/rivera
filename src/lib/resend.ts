@@ -1,6 +1,15 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+let _resend: Resend | null = null
+function getResend(): Resend {
+  if (!_resend) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY is not set')
+    }
+    _resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return _resend
+}
 
 const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL ?? 'reminders@getrivera.co'
 const DEFAULT_FROM_NAME = process.env.RESEND_FROM_NAME ?? 'Rivera'
@@ -9,7 +18,7 @@ type SendEmailParams = {
   to: string
   subject: string
   html: string
-  from?: string // override e.g. "Fine Properties <fineproperties@mail.getrivera.co>"
+  from?: string
   replyTo?: string
 }
 
@@ -19,7 +28,7 @@ export async function sendEmail(
   const from = params.from ?? `${DEFAULT_FROM_NAME} <${DEFAULT_FROM}>`
 
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await getResend().emails.send({
       from,
       to: params.to,
       subject: params.subject,
