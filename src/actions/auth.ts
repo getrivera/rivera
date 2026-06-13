@@ -130,18 +130,17 @@ export async function signupCompany(formData: FormData): Promise<ActionResult> {
     ? `${slug}-${Math.random().toString(36).substring(2, 6)}`
     : slug
 
-    const result = await createCompanyAndStaff(
-      adminClient, userId, companyName, fullName, email, finalSlug, companyCode
-    )
-  
-    // If company setup failed, delete the auth user so they can try again cleanly
-    if (!result.success) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (adminClient as any).auth.admin.deleteUser(userId)
-    }
-  
-    return result
+  const result = await createCompanyAndStaff(
+    adminClient, userId, companyName, fullName, email, finalSlug, companyCode
+  )
 
+  // If company setup failed, delete the auth user so they can try again cleanly
+  if (!result.success) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminClient as any).auth.admin.deleteUser(userId)
+  }
+
+  return result
 }
 
 async function createCompanyAndStaff(
@@ -190,7 +189,47 @@ async function createCompanyAndStaff(
     .update({ company_id: company.id })
     .eq('id', userId)
 
-  // 4. Notify Rivera admin
+  // 4. Seed default reminder templates
+  await adminClient.from('reminder_templates').insert([
+    {
+      company_id: company.id,
+      name: 'Deposit overdue',
+      trigger_type: 'deposit_overdue',
+      message_template: 'Hi {{buyer_name}}, your deposit for {{listing_title}} is overdue. Please make payment to avoid losing your allocation. Contact {{company_name}} for assistance.',
+      channel: 'sms',
+      days_offset: 0,
+      is_active: true,
+    },
+    {
+      company_id: company.id,
+      name: 'Installment overdue',
+      trigger_type: 'installment_overdue',
+      message_template: 'Hi {{buyer_name}}, your installment payment for {{listing_title}} is {{days_overdue}} day(s) overdue. Please make payment as soon as possible. Contact {{company_name}} for assistance.',
+      channel: 'sms',
+      days_offset: 0,
+      is_active: true,
+    },
+    {
+      company_id: company.id,
+      name: 'Payment completed',
+      trigger_type: 'payment_completed',
+      message_template: 'Hi {{buyer_name}}, we have received your payment of {{amount}} for {{listing_title}}. Thank you! Contact {{company_name}} if you have any questions.',
+      channel: 'sms',
+      days_offset: 0,
+      is_active: true,
+    },
+    {
+      company_id: company.id,
+      name: 'Manual reminder',
+      trigger_type: 'manual',
+      message_template: 'Hi {{buyer_name}}, this is a reminder regarding your payment for {{listing_title}}. Please contact {{company_name}} for more information.',
+      channel: 'sms',
+      days_offset: 0,
+      is_active: true,
+    },
+  ])
+
+  // 5. Notify Rivera admin
   const adminEmail = process.env.RIVERA_ADMIN_EMAIL ?? 'fadlullahazeez@gmail.com'
   await sendEmail({
     to: adminEmail,
