@@ -78,7 +78,26 @@ export default async function PartnerLayout({
   const currentCompanyLink =
     companyLinks.find((cl) => cl.company_id === activeCompanyId) ?? companyLinks[0]
 
-  const currentCompany = currentCompanyLink.companies!
+    const currentCompany = currentCompanyLink.companies
+
+    if (!currentCompany) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 max-w-md text-center">
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Unable to load company</h1>
+            <p className="text-gray-500 text-sm mb-4">
+              There was a problem loading your company details. Please try again.
+            </p>
+            <a
+              href="/partner/login"
+              className="inline-block px-4 py-2 bg-brand-500 text-white text-sm font-medium rounded-lg hover:bg-brand-600 transition-colors"
+            >
+              Back to login
+            </a>
+          </div>
+        </div>
+      )
+    }
 
   const multiCompanyEnabled = process.env.NEXT_PUBLIC_PARTNER_MULTI_COMPANY === 'true'
 
