@@ -78,8 +78,20 @@ export async function signupCompany(formData: FormData): Promise<ActionResult> {
     return { success: false, error: 'Password must be at least 8 characters' }
   }
 
-  const supabase = await createClient()
   const adminClient = createAdminClient()
+
+  // Check if email is already registered before hitting auth,
+  // avoids burning a Supabase rate-limit attempt on duplicate signups
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existingUsers } = await (adminClient as any).auth.admin.listUsers()
+  const emailTaken = existingUsers?.users?.some(
+    (u: { email: string }) => u.email?.toLowerCase() === email.toLowerCase()
+  )
+  if (emailTaken) {
+    return { success: false, error: 'An account with this email already exists' }
+  }
+
+  const supabase = await createClient()
 
   // 1. Create auth user
   const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -92,7 +104,11 @@ export async function signupCompany(formData: FormData): Promise<ActionResult> {
   })
 
   if (authError || !authData.user) {
-    if (authError?.message.includes('already registered')) {
+    if (authError?.message?.toLowerCase().includes('rate limit') ||
+        authError?.message?.toLowerCase().includes('after')) {
+      return { success: false, error: 'Too many attempts. Please wait a moment and try again.' }
+    }
+    if (authError?.message?.toLowerCase().includes('already registered')) {
       return { success: false, error: 'An account with this email already exists' }
     }
     return { success: false, error: authError?.message ?? 'Failed to create account' }
