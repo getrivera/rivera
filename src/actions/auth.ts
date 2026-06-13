@@ -168,10 +168,9 @@ async function createCompanyAndStaff(
     .select('id')
     .single()
 
-    if (companyError || !company) {
-      console.error('COMPANY INSERT FAILED:', companyError)
-      return { success: false, error: companyError?.message ?? 'Failed to create company. Please try again.' }
-    }
+  if (companyError || !company) {
+    return { success: false, error: 'Failed to create company. Please try again.' }
+  }
 
   // 2. Create company_staff record
   const { error: staffError } = await adminClient.from('company_staff').insert({
