@@ -38,7 +38,7 @@ export default async function PartnerListingsPage() {
 
   const { data: listingsRaw } = await supabase
     .from('listings')
-    .select('id, title, property_type, location_city, location_state, price_kobo, unit_type, units_total, units_sold, show_units_to_partners, commission_type, commission_value, gallery_urls')
+    .select('id, title, property_type, location_city, location_state, price_kobo, unit_type, units_total, units_allocated, show_units_to_partners, commission_type, commission_value, gallery_urls')
     .in('company_id', companyIds)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -52,7 +52,7 @@ export default async function PartnerListingsPage() {
     price_kobo: number
     unit_type: string
     units_total: number
-    units_sold: number
+    units_allocated: number
     show_units_to_partners: boolean
     commission_type: string
     commission_value: number
@@ -85,7 +85,7 @@ export default async function PartnerListingsPage() {
               ? formatNaira(listing.commission_value)
               : `${listing.commission_value}%`
 
-            const remaining = Math.max(0, (listing.units_total ?? 0) - (listing.units_sold ?? 0))
+            const remaining = Math.max(0, (listing.units_total ?? 0) - (listing.units_allocated ?? 0))
 
             return (
               <Link
@@ -125,7 +125,7 @@ export default async function PartnerListingsPage() {
                         <p className={`text-xs mt-0.5 ${remaining === 0 ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
                           {remaining === 0
                             ? 'Sold out'
-                            : formatRemainingUnits(listing.units_total, listing.units_sold ?? 0, listing.unit_type)
+                            : formatRemainingUnits(listing.units_total, listing.units_allocated ?? 0, listing.unit_type)
                           }
                         </p>
                       ) : null}
