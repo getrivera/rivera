@@ -1249,8 +1249,8 @@ export type Database = {
       }
       partners: {
         Row: {
-          account_name: string | null
-          account_number: string | null
+          bank_account_name: string | null
+          bank_account_number: string | null
           bank_code: string | null
           bank_name: string | null
           bvn_hash: string | null
@@ -1265,8 +1265,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          account_name?: string | null
-          account_number?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
           bank_code?: string | null
           bank_name?: string | null
           bvn_hash?: string | null
@@ -1281,8 +1281,8 @@ export type Database = {
           user_id: string
         }
         Update: {
-          account_name?: string | null
-          account_number?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
           bank_code?: string | null
           bank_name?: string | null
           bvn_hash?: string | null
@@ -1764,8 +1764,8 @@ export type Database = {
       }
       virtual_accounts: {
         Row: {
-          account_name: string
-          account_number: string
+          bank_account_name: string
+          bank_account_number: string
           amount_paid_kobo: number
           amount_remaining_kobo: number | null
           bank_name: string
@@ -1784,8 +1784,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          account_name: string
-          account_number: string
+          bank_account_name: string
+          bank_account_number: string
           amount_paid_kobo?: number
           amount_remaining_kobo?: number | null
           bank_name: string
@@ -1804,8 +1804,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          account_name?: string
-          account_number?: string
+          bank_account_name?: string
+          bank_account_number?: string
           amount_paid_kobo?: number
           amount_remaining_kobo?: number | null
           bank_name?: string

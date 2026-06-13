@@ -71,7 +71,6 @@ export default async function PartnerProfilePage() {
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-gray-800">My companies</h2>
           {multiCompanyEnabled && (
-            
             <a
               href="/partner/join"
               className="text-xs text-brand-500 hover:underline"
