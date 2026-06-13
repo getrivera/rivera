@@ -86,8 +86,7 @@ export async function registerSale(formData: FormData): Promise<ActionResult> {
     return { success: false, error: 'Listing not found' }
   }
 
-  // Verify the chosen installment plan belongs to the chosen listing —
-  // previously a plan from any listing (or any company) was accepted.
+  // Verify the chosen installment plan belongs to the chosen listing
   if (installmentPlanId) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: planCheckRaw } = await (adminClient as any)
@@ -226,7 +225,7 @@ export async function updateSaleStatus(
     return { success: false, error: 'Failed to update sale status' }
   }
 
-  // When marked fully paid — update invoice and trigger commission
+  // When marked fully paid — update invoice and trigger all commission types
   if (status === 'fully_paid') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: invoiceRaw } = await (adminClient as any)
@@ -250,7 +249,10 @@ export async function updateSaleStatus(
         .eq('id', invoice.id)
     }
 
+    // Fire all trigger types so any commission trigger_event gets picked up
+    await checkCommissionTrigger(saleId, staff.company_id, 'deposit_received')
     await checkCommissionTrigger(saleId, staff.company_id, 'fully_paid')
+    await checkCommissionTrigger(saleId, staff.company_id, 'milestone_reached')
   }
 
   // When deposit confirmed — trigger deposit commission
