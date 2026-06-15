@@ -55,7 +55,7 @@ export default async function PartnerListingDetailPage({
     price_kobo: number
     unit_type: string
     units_total: number
-    units_sold: number
+    units_allocated: number
     show_units_to_partners: boolean
     commission_type: string
     commission_value: number
@@ -64,7 +64,7 @@ export default async function PartnerListingDetailPage({
   }
 
   const listing = listingRaw as Listing
-  const remaining = Math.max(0, (listing.units_total ?? 0) - (listing.units_sold ?? 0))
+  const remaining = Math.max(0, (listing.units_total ?? 0) - (listing.units_allocated ?? 0))
 
   const { data: plansRaw } = await supabase
     .from('installment_plans')
@@ -222,7 +222,7 @@ export default async function PartnerListingDetailPage({
               <p className={`text-sm mt-1 ${remaining === 0 ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
                 {remaining === 0
                   ? 'Sold out'
-                  : formatRemainingUnits(listing.units_total, listing.units_sold ?? 0, listing.unit_type)
+                  : formatRemainingUnits(listing.units_total, listing.units_allocated ?? 0, listing.unit_type)
                 }
               </p>
             ) : null}

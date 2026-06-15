@@ -25,7 +25,7 @@ type Listing = {
   price_kobo: number
   unit_type: string
   units_total: number
-  units_sold: number
+  units_allocated: number
   commission_type: string
   commission_value: number
   commission_trigger: string
@@ -98,9 +98,9 @@ export default async function ListingDetailPage({
   if (!listingData) notFound()
   const listing = listingData as Listing
 
-  const unitsRemaining = Math.max(0, (listing.units_total ?? 0) - (listing.units_sold ?? 0))
+  const unitsRemaining = Math.max(0, (listing.units_total ?? 0) - (listing.units_allocated ?? 0))
   const soldPercent = listing.units_total
-    ? Math.round((listing.units_sold / listing.units_total) * 100)
+    ? Math.round((listing.units_allocated / listing.units_total) * 100)
     : 0
 
   const { data: plans } = await supabase
@@ -322,13 +322,13 @@ export default async function ListingDetailPage({
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-500">Sold</span>
                     <span className="font-medium text-orange-600">
-                      {formatUnits(listing.units_sold ?? 0, listing.unit_type)}
+                      {formatUnits(listing.units_allocated ?? 0, listing.unit_type)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Remaining</span>
                     <span className={`font-medium ${unitsRemaining === 0 ? 'text-red-500' : 'text-green-600'}`}>
-                      {formatRemainingUnits(listing.units_total, listing.units_sold ?? 0, listing.unit_type)}
+                      {formatRemainingUnits(listing.units_total, listing.units_allocated ?? 0, listing.unit_type)}
                     </span>
                   </div>
                   <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">

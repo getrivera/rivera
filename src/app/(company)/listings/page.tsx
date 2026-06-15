@@ -14,7 +14,7 @@ type Listing = {
   location_state: string
   price_kobo: number
   units_total: number
-  units_sold: number
+  units_allocated: number
   unit_type: string
   status: string
 }
@@ -36,7 +36,7 @@ export default async function ListingsPage() {
 
   const { data: listings } = await supabase
     .from('listings')
-    .select('id, title, property_type, location_city, location_state, price_kobo, units_total, units_sold, unit_type, status')
+    .select('id, title, property_type, location_city, location_state, price_kobo, units_total, units_allocated, unit_type, status')
     .eq('company_id', staff.company_id)
     .order('created_at', { ascending: false })
 
@@ -85,7 +85,7 @@ export default async function ListingsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {(listings as Listing[]).map((listing) => {
-            const remaining = (listing.units_total ?? 0) - (listing.units_sold ?? 0)
+            const remaining = (listing.units_total ?? 0) - (listing.units_allocated ?? 0)
             return (
               <Link
                 key={listing.id}
