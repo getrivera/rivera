@@ -27,13 +27,19 @@ export default async function CompanyLayout({
 
   const { data: staffData } = await supabase
     .from('company_staff')
-    .select('company_id, role')
+    .select('company_id, role, must_change_password')
     .eq('user_id', user.id)
     .single()
 
   if (!staffData) redirect('/login')
 
-  const staff = staffData as { company_id: string; role: string }
+  const staff = staffData as { company_id: string; role: string; must_change_password: boolean }
+
+  // Accounts created directly by an admin (temporary password) must set
+  // their own password before they can use the app.
+  if (staff.must_change_password) {
+    redirect('/reset-password')
+  }
 
   const { data: companyData } = await supabase
     .from('companies')

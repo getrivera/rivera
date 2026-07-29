@@ -2,8 +2,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 type AuditAction =
   | 'staff.invited'
+  | 'staff.created'
   | 'staff.removed'
   | 'staff.role_changed'
+  | 'staff.password_reset_sent'
   | 'listing.created'
   | 'listing.updated'
   | 'listing.published'

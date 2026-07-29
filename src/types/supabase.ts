@@ -709,6 +709,7 @@ export type Database = {
           created_at: string
           id: string
           invited_by: string | null
+          must_change_password: boolean
           role: Database["public"]["Enums"]["staff_role"]
           status: string
           updated_at: string
@@ -719,6 +720,7 @@ export type Database = {
           created_at?: string
           id?: string
           invited_by?: string | null
+          must_change_password?: boolean
           role?: Database["public"]["Enums"]["staff_role"]
           status?: string
           updated_at?: string
@@ -729,6 +731,7 @@ export type Database = {
           created_at?: string
           id?: string
           invited_by?: string | null
+          must_change_password?: boolean
           role?: Database["public"]["Enums"]["staff_role"]
           status?: string
           updated_at?: string

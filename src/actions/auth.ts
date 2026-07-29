@@ -314,5 +314,17 @@ export async function resetPassword(formData: FormData): Promise<ActionResult> {
     return { success: false, error: 'Failed to update password. Please request a new reset link.' }
   }
 
+  // Clear the forced-reset flag, if it was set (e.g. accounts created
+  // directly by an admin with a temporary password). No-op otherwise.
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const adminClient = createAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminClient as any)
+      .from('company_staff')
+      .update({ must_change_password: false })
+      .eq('user_id', user.id)
+  }
+
   return { success: true, data: undefined }
 }
