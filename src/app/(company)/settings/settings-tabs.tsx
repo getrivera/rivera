@@ -71,7 +71,7 @@ type Props = {
   paystackConfig: PaystackConfig
 }
 
-const TABS = ['Company', 'Branding', 'Staff', 'Reminders', 'Email', 'Payments'] as const
+const TABS = ['Company', 'Branding', 'Staff', 'Reminders', 'Payments'] as const
 type Tab = typeof TABS[number]
 
 export function SettingsTabs({

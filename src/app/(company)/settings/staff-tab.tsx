@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { inviteStaff, updateStaffRole, removeStaff, resetStaffPassword } from '@/actions/settings'
-import { UserPlus, Loader2, Check, X, KeyRound } from 'lucide-react'
+import { inviteStaff, updateStaffRole } from '@/actions/settings'
+import { UserPlus, Loader2, Check } from 'lucide-react'
 import { ImportStaffModal } from './import-staff-modal'
 import { AddUserModal } from './add-user-modal'
+import { StaffDetailModal } from './staff-detail-modal'
 
 type StaffMember = {
   id: string
@@ -51,7 +52,7 @@ export function StaffTab({ staff, currentUserId, currentUserRole }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
-  const [resetSentId, setResetSentId] = useState<string | null>(null)
+  const [selectedMember, setSelectedMember] = useState<StaffMember | null>(null)
 
   const isAdmin = currentUserRole === 'admin'
 
@@ -78,28 +79,6 @@ export function StaffTab({ staff, currentUserId, currentUserRole }: Props) {
     const result = await updateStaffRole(staffId, role)
     if (!result.success) setError(result.error)
     else router.refresh()
-    setUpdatingId(null)
-  }
-
-  async function handleRemove(staffId: string) {
-    if (!confirm('Remove this staff member? They will lose access immediately.')) return
-    setUpdatingId(staffId)
-    const result = await removeStaff(staffId)
-    if (!result.success) setError(result.error)
-    else router.refresh()
-    setUpdatingId(null)
-  }
-
-  async function handleResetPassword(staffId: string) {
-    if (!confirm('Send a password reset link to this staff member?')) return
-    setUpdatingId(staffId)
-    const result = await resetStaffPassword(staffId)
-    if (!result.success) {
-      setError(result.error)
-    } else {
-      setResetSentId(staffId)
-      setTimeout(() => setResetSentId(null), 3000)
-    }
     setUpdatingId(null)
   }
 
@@ -217,14 +196,18 @@ export function StaffTab({ staff, currentUserId, currentUserRole }: Props) {
               key={member.id}
               className="flex items-center justify-between px-5 py-4"
             >
-              <div className="flex items-center gap-3">
+              <div
+                onClick={() => isAdmin && setSelectedMember(member)}
+                className={`flex items-center gap-3 ${isAdmin ? 'cursor-pointer group' : ''}`}
+                title={isAdmin ? 'View account details' : undefined}
+              >
                 <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                   {member.full_name
                     ? member.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
                     : '?'}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors">
                     {member.full_name || member.email}
                     {member.user_id === currentUserId && (
                       <span className="ml-2 text-xs text-gray-400">(you)</span>
@@ -267,49 +250,19 @@ export function StaffTab({ staff, currentUserId, currentUserRole }: Props) {
                     {member.role}
                   </span>
                 )}
-
-                {/* Reset password */}
-                {isAdmin && member.user_id !== currentUserId && (
-                  resetSentId === member.id ? (
-                    <span className="flex items-center gap-1 text-xs text-green-600">
-                      <Check size={13} /> Sent
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => handleResetPassword(member.id)}
-                      disabled={updatingId === member.id}
-                      className="p-1 text-gray-300 hover:text-brand-600 disabled:opacity-50 transition-colors"
-                      title="Send password reset link"
-                    >
-                      {updatingId === member.id ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <KeyRound size={14} />
-                      )}
-                    </button>
-                  )
-                )}
-
-                {/* Remove */}
-                {isAdmin && member.user_id !== currentUserId && (
-                  <button
-                    onClick={() => handleRemove(member.id)}
-                    disabled={updatingId === member.id}
-                    className="p-1 text-gray-300 hover:text-red-500 disabled:opacity-50 transition-colors"
-                    title="Remove staff member"
-                  >
-                    {updatingId === member.id ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <X size={14} />
-                    )}
-                  </button>
-                )}
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {selectedMember && (
+        <StaffDetailModal
+          member={selectedMember}
+          isSelf={selectedMember.user_id === currentUserId}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
 
       {/* Role reference */}
       <div className="bg-gray-50 rounded-xl p-4">

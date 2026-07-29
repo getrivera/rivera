@@ -443,6 +443,70 @@ export async function resetStaffPassword(staffId: string): Promise<ActionResult>
   return { success: true, data: undefined }
 }
 
+// ── Fetch auth details for a staff member's detail view ────────────────────
+// Last sign-in and sign-in method live on the Supabase auth user, not in
+// company_staff/profiles, so this is a separate on-demand call (made when
+// the detail modal opens) rather than something joined into the main list.
+
+export async function getStaffAuthDetails(staffId: string): Promise<
+  ActionResult<{ lastSignInAt: string | null; signInMethod: string }>
+> {
+  const supabase = await createClient()
+  const adminClient = createAdminClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const { data: staffData } = await supabase
+    .from('company_staff')
+    .select('company_id, role')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!staffData) return { success: false, error: 'Not authorised' }
+  const staff = staffData as StaffRecord
+
+  if (staff.role !== 'admin') {
+    return { success: false, error: 'Only admins can view staff account details' }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: targetStaffRaw } = await (adminClient as any)
+    .from('company_staff')
+    .select('user_id')
+    .eq('id', staffId)
+    .eq('company_id', staff.company_id)
+    .single()
+
+  const targetStaff = targetStaffRaw as { user_id: string } | null
+  if (!targetStaff) return { success: false, error: 'Staff member not found' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: authUserRaw, error } = await (adminClient as any)
+    .auth.admin.getUserById(targetStaff.user_id)
+
+  if (error || !authUserRaw?.user) {
+    return { success: false, error: 'Could not load account details' }
+  }
+
+  const authUser = authUserRaw.user as {
+    last_sign_in_at: string | null
+    identities?: { provider: string }[]
+  }
+
+  const provider = authUser.identities?.[0]?.provider
+  const signInMethod =
+    !provider || provider === 'email' ? 'Email & password' : provider.charAt(0).toUpperCase() + provider.slice(1)
+
+  return {
+    success: true,
+    data: {
+      lastSignInAt: authUser.last_sign_in_at,
+      signInMethod,
+    },
+  }
+}
+
 // ── Bulk invite staff ─────────────────────────────────────────────────────
 
 export async function bulkInviteStaff(
